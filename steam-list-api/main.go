@@ -1,31 +1,27 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"reflect"
 	"strconv"
 	"strings"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"steam-list-api.com/internal/core"
 	"steam-list-api.com/internal/model"
-	"steam-list-api.com/internal/service"
 )
 
 func main() {
 	fmt.Println("Hello World")
-	clientIdIGDB := loadEnv("IGDBClientID")
-	clientSecretIGDB := loadEnv("IGDBClientSecret")
-	keySteamworks := loadEnv("SteamwroksKey")
+	IGDBClientId := loadEnv("IGDBClientID")
+	IGDBClientSecret := loadEnv("IGDBClientSecret")
+	SteamworksKey := loadEnv("SteamwroksKey")
 	router := mux.NewRouter()
-	client := service.CreateClient(clientIdIGDB, clientSecretIGDB, keySteamworks)
-	connectDatabase()
+	core := core.Initialize(IGDBClientId, IGDBClientSecret, SteamworksKey)
 
 	router.HandleFunc("/api/hello",
 		func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -40,7 +36,7 @@ func main() {
 			if err != nil {
 				internalServerErrorHandler(responseWriter, request, err)
 			}
-			response := client.Game.GetTrendGames(page)
+			response := core.Client.Game.GetTrendGames(page)
 			responseWriter.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(responseWriter).Encode(response)
 		}).Methods("GET")
@@ -48,7 +44,7 @@ func main() {
 	router.HandleFunc("/api/game/{id}",
 		func(responseWriter http.ResponseWriter, request *http.Request) {
 			id := strings.TrimPrefix(request.URL.Path, "/api/game/")
-			response := client.Game.GetGame(id)
+			response := core.Client.Game.GetGame(id)
 			responseWriter.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(responseWriter).Encode(response)
 		}).Methods("GET")
@@ -60,7 +56,7 @@ func main() {
 			if err != nil {
 				internalServerErrorHandler(responseWriter, request, err)
 			}
-			response := client.Game.GetPlayerGames(id, page)
+			response := core.Client.Game.GetPlayerGames(id, page)
 			responseWriter.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(responseWriter).Encode(response)
 		}).Methods("GET")
@@ -104,74 +100,4 @@ func loadEnv(config string) string {
 func internalServerErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("500 Internal Server Error" + err.Error()))
-}
-
-func connectDatabase() (*sql.DB, error) {
-	connectionString := loadEnv("MySQL")
-	db, err := sql.Open("mysql", connectionString)
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
-	db.SetConnMaxLifetime(time.Minute * 3)
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(10)
-	rows, err := db.Query("SELECT IGDBID, ArtworkHDURL, CoverHDURL, Name, SteamAPPID FROM  game g ")
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
-
-	game := &model.Game{}
-	columns, err := rows.Columns()
-
-	obj := make([]interface{}, len(columns))
-	for i := range obj {
-		obj[i] = new(interface{})
-	}
-
-	for rows.Next() {
-		err := rows.Scan(obj...)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	for i := 0; i < len(columns); i++ {
-		structValue := reflect.ValueOf(game).Elem()
-		fieldVal := structValue.FieldByName(columns[i])
-		tete := obj[i]
-		b, ok := tete.(*interface{})
-		if !ok {
-
-		}
-		var v interface{}
-		v = *b
-
-		val := reflect.ValueOf(v)
-		fieldVal.Set(val.Convert(fieldVal.Type()))
-	}
-
-	rows.Close()
-	db.Close()
-	return db, err
-}
-
-func convertValue(value interface{}) interface{} {
-    v := reflect.ValueOf(value)
-
-    switch v.Kind() {
-    case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-        return v.Int()
-    case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-        return v.Uint()
-    case reflect.Float32, reflect.Float64:
-        return v.Float()
-    case reflect.String:
-        return v.String()
-    case reflect.Bool:
-        return v.Bool()
-    default:
-        return value
-    }
 }
