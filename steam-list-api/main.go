@@ -21,7 +21,12 @@ func main() {
 	IGDBClientSecret := loadEnv("IGDBClientSecret")
 	SteamworksKey := loadEnv("SteamwroksKey")
 	router := mux.NewRouter()
-	core := core.Initialize(IGDBClientId, IGDBClientSecret, SteamworksKey)
+	dbType := "sqlite"
+	core, err := core.Initialize(IGDBClientId, IGDBClientSecret, SteamworksKey, dbType)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	router.HandleFunc("/api/hello",
 		func(responseWriter http.ResponseWriter, request *http.Request) {
