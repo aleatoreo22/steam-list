@@ -18,13 +18,17 @@ type SQLite struct {
 
 const sqliteDatabaseFile = "./steamlist.db"
 
-func (sqlite *SQLite) Connect() error {
+func (sqlite *SQLite) Open() error {
 	db, err := sql.Open("sqlite3", sqliteDatabaseFile)
 	if err != nil {
 		return err
 	}
 	sqlite.db = db
 	return nil
+}
+
+func (sqlite *SQLite) Close() error {
+	return sqlite.db.Close()
 }
 
 func (db *SQLite) DatabaseExists() bool {
@@ -57,12 +61,10 @@ func (sqlite *SQLite) CreateTable(tableModel any) error {
 	t := reflect.TypeOf(tableModel)
 	tableName := t.Name()
 	var columns []string
+	var primaryKey []string
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		tag := field.Tag.Get("sql")
-		if !model.IsSqlField(tag) {
-			continue
-		}
 		var queryField strings.Builder
 		queryField.WriteString(field.Name + " ")
 		fieldLen := model.GetStringLen(tag)
@@ -71,12 +73,17 @@ func (sqlite *SQLite) CreateTable(tableModel any) error {
 			queryField.WriteString("(" + strconv.Itoa(fieldLen) + ")")
 		}
 		if model.IsPrimaryKey(tag) {
-			queryField.WriteString("NOT NULL PRIMARY KEY")
+			queryField.WriteString(" NOT NULL ")
+			primaryKey = append(primaryKey, field.Name)
 		}
 		columns = append(columns, queryField.String())
 	}
-	sql := "CREATE TABLE IF NOT EXISTS " + tableName + " (" + strings.Join(columns, ",\n") + ");"
-	_, err := sqlite.db.Exec(sql)
+	sql := "CREATE TABLE IF NOT EXISTS " + tableName + " (" + strings.Join(columns, ",\n")
+	if len(primaryKey) > 0 {
+		sql += ", \n PRIMARY KEY (" + strings.Join(primaryKey, ", ") + ")"
+	}
+	sql += ");"
+	err := sqlite.Execute(sql)
 	return err
 }
 

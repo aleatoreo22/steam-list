@@ -49,7 +49,7 @@ func main() {
 	router.HandleFunc("/api/game/{id}",
 		func(responseWriter http.ResponseWriter, request *http.Request) {
 			id := strings.TrimPrefix(request.URL.Path, "/api/game/")
-			response := core.Client.Game.GetGame(id)
+			response := core.GetGame(id)
 			responseWriter.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(responseWriter).Encode(response)
 		}).Methods("GET")

@@ -2,6 +2,9 @@ package database
 
 import (
 	"errors"
+	"fmt"
+	"reflect"
+	"strings"
 
 	"steam-list-api.com/internal/database/sqlite"
 	"steam-list-api.com/internal/model"
@@ -13,10 +16,30 @@ type Database struct {
 }
 
 type DatabaseFramework interface {
+	Open() error
+	Close() error
 	DatabaseExists() bool
 	Execute(string) error
 	CreateTable(any) error
 	Query(string, any) ([]any, error)
+}
+
+type QueryBuilder struct {
+	strings.Builder
+}
+
+func (qb *QueryBuilder) AddParameter(parameter string, data any) {
+	typeName := reflect.TypeOf(data).Name()
+	var dataString string
+	switch typeName {
+	case "string":
+		dataString = "'" + data.(string) + "'"
+	default:
+		dataString = fmt.Sprintf("%v", data)
+	}
+	query := strings.Replace(qb.String(), parameter, dataString, 1)
+	qb.Reset()
+	qb.WriteString(query)
 }
 
 func Initialize(dbType string) (*Database, error) {
@@ -39,7 +62,11 @@ func Initialize(dbType string) (*Database, error) {
 }
 
 func CreateDatabase(db *DatabaseFramework) error {
-	err := (*db).CreateTable(model.Game{})
+	err := (*db).Open()
+	if err != nil {
+		return err
+	}
+	err = (*db).CreateTable(model.Game{})
 	if err != nil {
 		return err
 	}
@@ -51,5 +78,6 @@ func CreateDatabase(db *DatabaseFramework) error {
 	if err != nil {
 		return err
 	}
+	(*db).Close()
 	return nil
 }

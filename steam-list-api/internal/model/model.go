@@ -22,7 +22,3 @@ func GetStringLen(tag string) int {
 func IsPrimaryKey(tag string) bool {
 	return strings.Contains(tag, "key")
 }
-
-func IsSqlField(tag string) bool {
-	return strings.Contains(tag, "sql:")
-}

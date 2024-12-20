@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/labstack/gommon/log"
 	"steam-list-api.com/internal/database"
 	"steam-list-api.com/internal/model"
 	"steam-list-api.com/internal/service"
@@ -25,7 +26,7 @@ func Initialize(igdbClientID string, igdbClientSecret string, steamworksKey stri
 		IGDBClientSecret: igdbClientSecret,
 		SteamwroksKey:    steamworksKey,
 	}
-	service.CreateClient(core.Token.IGDBClientID, core.Token.IGDBClientSecret, core.Token.SteamwroksKey)
+	core.Client = service.CreateClient(core.Token.IGDBClientID, core.Token.IGDBClientSecret, core.Token.SteamwroksKey)
 	db, err := database.Initialize(dbType)
 	core.Database = db
 	if err != nil {
@@ -35,9 +36,19 @@ func Initialize(igdbClientID string, igdbClientSecret string, steamworksKey stri
 }
 
 func (core *Core) GetGame(id string) model.Game {
-	game := core.Client.Game.GetGame(id)
+	game, err := core.Database.Game.GetIGDB(id)
+	if err != nil {
+		return model.Game{}
+	}
+	if game.ID != "" {
+		return game
+	}
+	game = core.Client.Game.GetGame(id)
 	if game.IGDBID != 0 {
-		//core.Database
+		err := core.Database.Game.Upsert(game)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 	return game
 }
