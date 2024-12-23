@@ -1,6 +1,9 @@
 package database
 
 import (
+	"strconv"
+
+	"github.com/google/uuid"
 	"steam-list-api.com/internal/model"
 )
 
@@ -8,13 +11,13 @@ type GameDatabase struct {
 	database *Database
 }
 
-func (gamedb *GameDatabase) get(query QueryBuilder) (model.Game, error) {
-	err := gamedb.database.db.Open()
+func (db *GameDatabase) get(query QueryBuilder) (model.Game, error) {
+	err := db.database.db.Open()
 	if err != nil {
 		return model.Game{}, err
 	}
-	result, err := gamedb.database.db.Query(query.String(), model.Game{})
-	gamedb.database.db.Close()
+	result, err := db.database.db.Query(query.String(), model.Game{})
+	db.database.db.Close()
 	if err != nil {
 		return model.Game{}, err
 	}
@@ -25,27 +28,53 @@ func (gamedb *GameDatabase) get(query QueryBuilder) (model.Game, error) {
 	return game, nil
 }
 
-func (gamedb *GameDatabase) GetIGDB(IGDBID string) (model.Game, error) {
+func (db *GameDatabase) GetIGDB(idIGDB string) (model.Game, error) {
 	var query QueryBuilder
 	query.WriteString("SELECT * FROM Game WHERE IGDBID = ?IGDBID")
-	query.AddParameter("?IGDBID", IGDBID)
-	return gamedb.get(query)
+	query.AddParameter("?IGDBID", idIGDB)
+	return db.get(query)
 }
 
-func (gamedb *GameDatabase) Get(id string) (model.Game, error) {
+func (db *GameDatabase) Get(id string) (model.Game, error) {
 	var query QueryBuilder
 	query.WriteString("SELECT * FROM Game WHERE id = ?id")
 	query.AddParameter("?id", id)
-	return gamedb.get(query)
+	return db.get(query)
 }
 
-func (gamedb *GameDatabase) Upsert(game model.Game) error {
-	gameExists, err := gamedb.Get(game.ID)
+func (db *GameDatabase) verifyIfExists(game *model.Game) (bool, error) {
+	gameExists, err := db.Get(game.ID)
+	if err != nil {
+		return false, err
+	}
+	if gameExists.ID == "" {
+		if game.IGDBID > 0 {
+			gameExists, err = db.GetIGDB(strconv.Itoa(game.IGDBID))
+		}
+		if err != nil {
+			return false, err
+		}
+		if gameExists.ID == "" {
+			if game.SteamAPPID != "" {
+				gameExists, err = db.GetSteam(game.SteamAPPID)
+			}
+			if err != nil {
+				return false, err
+			}
+		}
+	}
+	game = &gameExists
+	return game.ID != "", nil
+}
+
+func (db *GameDatabase) Upsert(game model.Game) error {
+	exist, err := db.verifyIfExists(&game)
 	if err != nil {
 		return err
 	}
 	var query QueryBuilder
-	if gameExists.ID == "" {
+	if !exist {
+		game.ID = uuid.NewString()
 		query.WriteString("INSERT INTO Game (id, igdbid, name, artworkhdurl, coverhdurl, steamappid) VALUES ")
 		query.WriteString("( ?id, ?igdbid, ?name, ?artworkhdurl, ?coverhdurl, ?steamappid )")
 	} else {
@@ -58,11 +87,18 @@ func (gamedb *GameDatabase) Upsert(game model.Game) error {
 	query.AddParameter("?artworkhdurl", game.ArtworkHDURL)
 	query.AddParameter("?coverhdurl", game.CoverHDURL)
 	query.AddParameter("?steamappid", game.SteamAPPID)
-	err = gamedb.database.db.Open()
+	err = db.database.db.Open()
 	if err != nil {
 		return err
 	}
-	err = gamedb.database.db.Execute(query.String())
-	gamedb.database.db.Close()
+	err = db.database.db.Execute(query.String())
+	db.database.db.Close()
 	return err
+}
+
+func (db *GameDatabase) GetSteam(idSteam string) (model.Game, error) {
+	var query QueryBuilder
+	query.WriteString("SELECT * FROM Game WHERE SteamAPPID = ?SteamAPPID")
+	query.AddParameter("?SteamAPPID", idSteam)
+	return db.get(query)
 }

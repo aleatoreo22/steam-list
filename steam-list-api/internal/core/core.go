@@ -1,6 +1,8 @@
 package core
 
 import (
+	"strconv"
+
 	"github.com/labstack/gommon/log"
 	"steam-list-api.com/internal/database"
 	"steam-list-api.com/internal/model"
@@ -43,7 +45,7 @@ func (core *Core) GetGame(id string) model.Game {
 	if game.ID != "" {
 		return game
 	}
-	game = core.Client.Game.GetGame(id)
+	game = core.Client.Game.GetIGDB(id)
 	if game.IGDBID != 0 {
 		err := core.Database.Game.Upsert(game)
 		if err != nil {
@@ -51,4 +53,32 @@ func (core *Core) GetGame(id string) model.Game {
 		}
 	}
 	return game
+}
+
+func (core *Core) GetPlayerGames(idPlayerSteam string, page int) ([]model.Game, error) {
+	steamPlayerIdGames, err := core.Client.Game.GetIdsPlayetSteam(idPlayerSteam, page)
+	if err != nil {
+		return []model.Game{}, err
+	}
+	var games []model.Game
+	for _, idGameSteam := range steamPlayerIdGames {
+		game, err := core.Database.Game.GetSteam(strconv.Itoa(idGameSteam))
+		if err != nil {
+			return []model.Game{}, err
+		}
+		if game.ID != "" {
+			games = append(games, game)
+			continue
+		}
+		game = core.Client.Game.GetSteam(idGameSteam)
+		if game.IGDBID == 0 {
+			continue
+		}
+		games = append(games, game)
+		err = core.Database.Game.Upsert(game)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+	return games, nil
 }

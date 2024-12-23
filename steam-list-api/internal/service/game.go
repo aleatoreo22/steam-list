@@ -15,9 +15,9 @@ type GameService struct {
 	client *Client
 }
 
-const itensPerPage = 10
+const itemsPerPage = 10
 
-func (service *GameService) GetTrendGames(page int) []model.Game {
+func (service *GameService) GetTrend(page int) []model.Game {
 	gamesIGDB := service.client.IGDBClient.Game.Get(IGDB.Fields("*") + IGDB.Sort("total_rating", true))
 	var artworkIds []string
 	linq.From(gamesIGDB).WhereT(
@@ -33,34 +33,35 @@ func (service *GameService) GetTrendGames(page int) []model.Game {
 	return games
 }
 
-func (service *GameService) getSteamGameIGDBId(id string) string {
-	gameIGDB := service.client.IGDBClient.Game.GetExternal(IGDB.Fields("*") + IGDB.Where(" uid =\""+id+"\" & category = 1 ")) //Criar enumerado das plataformas
+func (service *GameService) GetSteam(idSteam int) model.Game {
+	idSteamString := strconv.Itoa(idSteam)
+	gameIGDB := service.client.IGDBClient.Game.
+		GetExternal(IGDB.Fields("*") + IGDB.Where(" uid =\""+idSteamString+"\" & category = 1 ")) //Criar enumerado das plataformas
 	//External Game Enums
 	if len(gameIGDB) == 0 || gameIGDB[0].Game == 0 {
-		return ""
+		return model.Game{}
 	}
-	idIGDB := strconv.Itoa(gameIGDB[0].Game)
-	return idIGDB
+	game := service.GetIGDB(strconv.Itoa(gameIGDB[0].Game))
+	return game
 }
 
 func (service *GameService) GetPlayerGames(idPlayer string, page int) *[]model.Game {
 	steamGames := service.client.SteamworksClient.Player.GetAllGames(idPlayer)
 	var games []model.Game
-	lastIndex := (itensPerPage * page)
-	for i := lastIndex - itensPerPage; i < lastIndex; i++ {
+	lastIndex := (itemsPerPage * page)
+	for i := lastIndex - itemsPerPage; i < lastIndex; i++ {
 		steamGame := steamGames.Games[i]
-		idSteam := strconv.Itoa(steamGame.Appid)
-		idIGDB := service.getSteamGameIGDBId(idSteam)
-		if idIGDB == "" {
+		idIGDB := service.GetSteam(steamGame.Appid).IGDBID
+		if idIGDB == 0 {
 			continue
 		}
-		games = append(games, service.GetGame(idIGDB))
+		games = append(games, service.GetIGDB(strconv.Itoa(idIGDB)))
 	}
 	return &games
 }
 
-func (service *GameService) GetGame(id string) model.Game {
-	gamesIGDB := service.client.IGDBClient.Game.Get(IGDB.Fields("*") + IGDB.Where(" id = "+id))
+func (service *GameService) GetIGDB(idIGDB string) model.Game {
+	gamesIGDB := service.client.IGDBClient.Game.Get(IGDB.Fields("*") + IGDB.Where(" id = "+idIGDB))
 	if len(gamesIGDB) == 0 {
 		return model.Game{}
 	}
@@ -110,4 +111,15 @@ func convertGameIGDBToGame(gamesIGDB []IGDBmodel.Game, artworkIGDB []IGDBmodel.A
 		}
 	}
 	return games
+}
+
+func (service *GameService) GetIdsPlayetSteam(idSteamPlayer string, page int) ([]int, error) {
+	steamIdGames := service.client.SteamworksClient.Player.GetAllGames(idSteamPlayer)
+	lastIndex := (itemsPerPage * page)
+	var gamesIds []int
+	for i := lastIndex - itemsPerPage; i < lastIndex; i++ {
+		steamGame := steamIdGames.Games[i]
+		gamesIds = append(gamesIds, steamGame.Appid)
+	}
+	return gamesIds, nil
 }

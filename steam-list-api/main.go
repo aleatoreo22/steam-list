@@ -41,7 +41,7 @@ func main() {
 			if err != nil {
 				internalServerErrorHandler(responseWriter, request, err)
 			}
-			response := core.Client.Game.GetTrendGames(page)
+			response := core.Client.Game.GetTrend(page)
 			responseWriter.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(responseWriter).Encode(response)
 		}).Methods("GET")
@@ -56,12 +56,16 @@ func main() {
 
 	router.HandleFunc("/api/player/games/{id}",
 		func(responseWriter http.ResponseWriter, request *http.Request) {
-			id := strings.TrimPrefix(request.URL.Path, "/api/player/games/")
+			idPlayerSteam := strings.TrimPrefix(request.URL.Path, "/api/player/games/")
 			page, err := getPage(request)
 			if err != nil {
 				internalServerErrorHandler(responseWriter, request, err)
 			}
-			response := core.Client.Game.GetPlayerGames(id, page)
+			// response := core.Client.Game.GetPlayerGames(id, page)
+			response, err := core.GetPlayerGames(idPlayerSteam, page)
+			if err != nil {
+				internalServerErrorHandler(responseWriter, request, err)
+			}
 			responseWriter.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(responseWriter).Encode(response)
 		}).Methods("GET")
