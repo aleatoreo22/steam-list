@@ -13,6 +13,7 @@ const baseurl = "https://api.steampowered.com/"
 type Client struct {
 	key    string
 	Player *PlayerService
+	User   *UserService
 }
 
 func CreateClient(key string) *Client {

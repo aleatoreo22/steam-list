@@ -20,3 +20,4 @@ func (service *PlayerService) GetAllGames(accountId string) *steamworksModel.Gam
 	}
 	return &apiResponse.Response
 }
+

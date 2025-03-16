@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"steam-list-api.com/internal/core"
 	"steam-list-api.com/internal/model"
@@ -69,8 +70,15 @@ func main() {
 			responseWriter.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(responseWriter).Encode(response)
 		}).Methods("GET")
+
 	log.Println("Server started at :8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
+
+	corsMiddleware := handlers.CORS(
+		handlers.AllowedOrigins([]string{"http://localhost:5173"}), // Permitir origem do Vite
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+	)
+	log.Fatal(http.ListenAndServe(":8080", corsMiddleware(router)))
 }
 
 func getPage(r *http.Request) (int, error) {

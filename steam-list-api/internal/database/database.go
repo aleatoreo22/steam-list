@@ -33,7 +33,7 @@ func (qb *QueryBuilder) AddParameter(parameter string, data any) {
 	var dataString string
 	switch typeName {
 	case "string":
-		dataString = "'" + data.(string) + "'"
+		dataString = "'" + strings.ReplaceAll(data.(string), "'", "''") + "'"
 	default:
 		dataString = fmt.Sprintf("%v", data)
 	}

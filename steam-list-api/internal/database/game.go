@@ -1,8 +1,6 @@
 package database
 
 import (
-	"strconv"
-
 	"github.com/google/uuid"
 	"steam-list-api.com/internal/model"
 )
@@ -48,20 +46,23 @@ func (db *GameDatabase) verifyIfExists(game *model.Game) (bool, error) {
 		return false, err
 	}
 	if gameExists.ID == "" {
-		if game.IGDBID > 0 {
-			gameExists, err = db.GetIGDB(strconv.Itoa(game.IGDBID))
+		// if game.IGDBID > 0 {
+		// 	gameExists, err = db.GetIGDB(strconv.Itoa(game.IGDBID))
+		// }
+		// if err != nil {
+		// 	return false, err
+		// }
+		// if gameExists.ID == "" {
+
+		//Existem jogos iguais na steam com versao pra Mac e pra Windows/Linux,
+		// eles sao 2 IDs na steam e apenas 1 no IGDB
+		if game.SteamAPPID != "" {
+			gameExists, err = db.GetSteam(game.SteamAPPID)
 		}
 		if err != nil {
 			return false, err
 		}
-		if gameExists.ID == "" {
-			if game.SteamAPPID != "" {
-				gameExists, err = db.GetSteam(game.SteamAPPID)
-			}
-			if err != nil {
-				return false, err
-			}
-		}
+		// }
 	}
 	game = &gameExists
 	return game.ID != "", nil

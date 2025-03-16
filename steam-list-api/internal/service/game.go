@@ -15,7 +15,7 @@ type GameService struct {
 	client *Client
 }
 
-const itemsPerPage = 10
+const itemsPerPage = 20
 
 func (service *GameService) GetTrend(page int) []model.Game {
 	gamesIGDB := service.client.IGDBClient.Game.Get(IGDB.Fields("*") + IGDB.Sort("total_rating", true))
@@ -113,11 +113,14 @@ func convertGameIGDBToGame(gamesIGDB []IGDBmodel.Game, artworkIGDB []IGDBmodel.A
 	return games
 }
 
-func (service *GameService) GetIdsPlayetSteam(idSteamPlayer string, page int) ([]int, error) {
+func (service *GameService) GetIdsPlayerSteam(idSteamPlayer string, page int) ([]int, error) {
 	steamIdGames := service.client.SteamworksClient.Player.GetAllGames(idSteamPlayer)
 	lastIndex := (itemsPerPage * page)
 	var gamesIds []int
 	for i := lastIndex - itemsPerPage; i < lastIndex; i++ {
+		if i > len(steamIdGames.Games)-1 {
+			break
+		}
 		steamGame := steamIdGames.Games[i]
 		gamesIds = append(gamesIds, steamGame.Appid)
 	}

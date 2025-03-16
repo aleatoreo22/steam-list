@@ -56,7 +56,7 @@ func (core *Core) GetGame(id string) model.Game {
 }
 
 func (core *Core) GetPlayerGames(idPlayerSteam string, page int) ([]model.Game, error) {
-	steamPlayerIdGames, err := core.Client.Game.GetIdsPlayetSteam(idPlayerSteam, page)
+	steamPlayerIdGames, err := core.Client.Game.GetIdsPlayerSteam(idPlayerSteam, page)
 	if err != nil {
 		return []model.Game{}, err
 	}
@@ -74,6 +74,7 @@ func (core *Core) GetPlayerGames(idPlayerSteam string, page int) ([]model.Game, 
 		if game.IGDBID == 0 {
 			continue
 		}
+		game.SteamAPPID = strconv.Itoa(idGameSteam)
 		games = append(games, game)
 		err = core.Database.Game.Upsert(game)
 		if err != nil {
@@ -81,4 +82,7 @@ func (core *Core) GetPlayerGames(idPlayerSteam string, page int) ([]model.Game, 
 		}
 	}
 	return games, nil
+}
+func (core *Core) GetSteamIDByUsername(username string) {
+
 }
