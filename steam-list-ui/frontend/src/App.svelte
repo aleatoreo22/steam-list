@@ -55,47 +55,57 @@
 
 <main class="bg-black">
     <div>
-        <div class="container p-4">
-            <div class="row flex-row justify-content-center align-items-center">
-                <div class="col-5 flex-row d-flex gap-2">
-                    <div class="form-group flex-grow-1">
+        <div class="container p-4 mx-auto">
+            <div class="flex flex-row justify-center items-center">
+                <div class="flex flex-row gap-2 w-full max-w-md">
+                    <div class="flex-grow">
                         <input
                             bind:value={steamIdInput}
-                            class="form-control"
+                            class="text-white w-full px-3 py-2 border border-gray-300 rounded-md transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             id="steamid"
                             placeholder="Steam ID"
                         />
                     </div>
 
                     <button
-                        class="btn btn-outline-primary"
+                        class="px-4 py-2 border border-blue-500 text-blue-500 rounded-md hover:bg-blue-500 hover:text-white transition"
                         on:click={startSync}
                     >
-                        Sync</button
-                    >
+                        Sync
+                    </button>
                 </div>
             </div>
         </div>
+
         {#if games.length == 0}
             <div></div>
         {:else}
-            <div class="container">
-                <div class="row">
+            <div class="container mx-auto">
+                <div class="flex flex-wrap -mx-2">
                     {#each games as game}
-                        <div class="col-3 pt-3 pe-2">
-                            <img
-                                src={game.cover_hd_url}
-                                alt=""
-                                class="rounded-bottom-5"
-                            />
-                            <div class="text-white pt-2">{game.name}</div>
+                        <div
+                            class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 px-2 pt-3"
+                        >
+                            <div
+                                class="bg-opacity-50 rounded-lg overflow-hidden shadow-lg"
+                            >
+                                <img
+                                    src={game.cover_hd_url}
+                                    alt=""
+                                    class="rounded-b-lg w-full"
+                                />
+                                <div class="text-white pt-2 text-center">
+                                    {game.name}
+                                </div>
+                            </div>
                         </div>
                     {/each}
                 </div>
             </div>
         {/if}
+
         {#if fetchinGames}
-            <div class="h1 text-white">LOADING...</div>
+            <div class="text-white text-2xl text-center">LOADING...</div>
         {:else}
             <div></div>
         {/if}
