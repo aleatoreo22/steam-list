@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"net/url"
 
-	IGDBmodel "steam-list-api.com/pkg/igdb/igdbModel"
+	"steam-list-api.com/pkg/igdb/igdbModel"
 )
 
 const baseurl = "https://api.igdb.com/v4/"
@@ -73,7 +73,7 @@ func (client *Client) Login() {
 	if err != nil {
 		log.Printf("Erro ao ler o corpo da resposta: %v", err)
 	}
-	var apiResponse IGDBmodel.Login
+	var apiResponse igdbModel.Login
 	err = json.Unmarshal(body, &apiResponse)
 	if err != nil {
 		log.Printf("Erro ao deserializar o JSON: %v", err)

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 
-	steamworksModel "steam-list-api.com/pkg/steamworks/steamworksModel"
+	"steam-list-api.com/pkg/steamworks/steamworksModel"
 )
 
 type PlayerService struct {
@@ -20,4 +20,3 @@ func (service *PlayerService) GetAllGames(accountId string) *steamworksModel.Gam
 	}
 	return &apiResponse.Response
 }
-

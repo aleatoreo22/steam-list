@@ -16,7 +16,7 @@ type Client struct {
 	User   *UserService
 }
 
-func CreateClient(key string) *Client {
+func NewClient(key string) *Client {
 	client := &Client{
 		key: key,
 	}

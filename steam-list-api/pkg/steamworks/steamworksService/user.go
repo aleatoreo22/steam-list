@@ -10,5 +10,3 @@ func (service *PlayerService) GetSteamIDByUsername(username string) {
 
 	}
 }
-
-// https://api.steampowered.com/

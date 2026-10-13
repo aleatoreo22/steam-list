@@ -9,31 +9,31 @@ type GameDatabase struct {
 	database *Database
 }
 
-func (db *GameDatabase) get(query QueryBuilder) (model.Game, error) {
+func (db *GameDatabase) get(query QueryBuilder) (*model.Game, error) {
 	err := db.database.db.Open()
 	if err != nil {
-		return model.Game{}, err
+		return nil, err
 	}
 	result, err := db.database.db.Query(query.String(), model.Game{})
 	db.database.db.Close()
 	if err != nil {
-		return model.Game{}, err
+		return nil, err
 	}
 	game := model.Game{}
 	if len(result) > 0 {
 		game = result[0].(model.Game)
 	}
-	return game, nil
+	return &game, nil
 }
 
-func (db *GameDatabase) GetIGDB(idIGDB string) (model.Game, error) {
+func (db *GameDatabase) GetIGDB(idIGDB string) (*model.Game, error) {
 	var query QueryBuilder
 	query.WriteString("SELECT * FROM Game WHERE IGDBID = ?IGDBID")
 	query.AddParameter("?IGDBID", idIGDB)
 	return db.get(query)
 }
 
-func (db *GameDatabase) Get(id string) (model.Game, error) {
+func (db *GameDatabase) Get(id string) (*model.Game, error) {
 	var query QueryBuilder
 	query.WriteString("SELECT * FROM Game WHERE id = ?id")
 	query.AddParameter("?id", id)
@@ -64,7 +64,7 @@ func (db *GameDatabase) verifyIfExists(game *model.Game) (bool, error) {
 		}
 		// }
 	}
-	game = &gameExists
+	game = gameExists
 	return game.ID != "", nil
 }
 
@@ -97,7 +97,7 @@ func (db *GameDatabase) Upsert(game model.Game) error {
 	return err
 }
 
-func (db *GameDatabase) GetSteam(idSteam string) (model.Game, error) {
+func (db *GameDatabase) GetSteam(idSteam string) (*model.Game, error) {
 	var query QueryBuilder
 	query.WriteString("SELECT * FROM Game WHERE SteamAPPID = ?SteamAPPID")
 	query.AddParameter("?SteamAPPID", idSteam)

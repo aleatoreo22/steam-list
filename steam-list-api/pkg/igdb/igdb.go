@@ -3,7 +3,7 @@ package igdb
 import (
 	"strings"
 
-	IGDBService "steam-list-api.com/pkg/igdb/igdbService"
+	"steam-list-api.com/pkg/igdb/igdbService"
 )
 
 type ImageSize string
@@ -63,8 +63,8 @@ func SetImageSize(url string, size ImageSize) string {
 	return strings.Replace(url, string(currentSize), string(size), -1)
 }
 
-func Login(clientid string, clientsecret string) *IGDBService.Client {
-	client := IGDBService.NewClient(clientid, clientsecret)
+func Login(clientid string, clientsecret string) *igdbService.Client {
+	client := igdbService.NewClient(clientid, clientsecret)
 	return client
 }
 
